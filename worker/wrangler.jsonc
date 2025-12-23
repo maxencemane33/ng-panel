@@ -1,10 +1,6 @@
 {
-	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "ng-panel",
-	"main": "src/index.js",
-	"compatibility_date": "2025-12-23",
-	"observability": {
-		"enabled": true
-	}
-	}
-	
+  "name": "ng-panel",
+  "compatibility_date": "2025-12-23",
+  "main": "src/index.js",   // <- ton script Worker
+  "observability": { "enabled": true }
+}
