@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Test Worker</title>
+</head>
+<body>
+  <h1>Test Worker Fetch</h1>
+  <input id="username" placeholder="Nom du joueur">
+  <button id="btn">Tester fetch</button>
+  <pre id="output"></pre>
+
+  <script>
+    const WORKER_URL = "https://ng-panel.ng-panel.workers.dev";
+    const output = document.getElementById("output");
+
+    document.getElementById("btn").addEventListener("click", async () => {
+      const username = encodeURIComponent(document.getElementById("username").value);
+      output.textContent = "Chargement...";
+      try {
+        const res = await fetch(`${WORKER_URL}/user/${username}`);
+        const data = await res.json();
+        output.textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        output.textContent = "Erreur : " + err.message;
+      }
+    });
+  </script>
+</body>
+</html>

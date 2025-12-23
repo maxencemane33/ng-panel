@@ -9,3 +9,40 @@ button {
   padding: 10px 15px;
   cursor: pointer;
 }
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #f0f4f8;
+  color: #333;
+  margin: 20px;
+}
+
+h1 {
+  color: #2a9df4;
+}
+
+button {
+  cursor: pointer;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  background-color: #3498db;
+  color: white;
+  font-weight: bold;
+}
+
+button:hover {
+  background-color: #2980b9;
+}
+
+.skin-images img {
+  max-height: 200px;
+  margin-right: 20px;
+  border-radius: 10px;
+}
+
+.skin-images {
+  display: flex;
+  align-items: center;
+  margin-top: 20px;
+}
