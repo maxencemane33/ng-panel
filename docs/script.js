@@ -6,6 +6,62 @@ const countryServerSelect = document.getElementById("countryServer");
 
 const WORKER_URL = "https://ng-panel.ng-panel.workers.dev";
 
+
+
+async function fetchUserWithRetry(username, server, retries = 10, delay = 600) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const res = await fetch(`${WORKER_URL}/user/${username}?server=${server}`);
+      const data = await res.json();
+      const s = data.servers?.[server];
+
+      // ✅ Valeur correcte trouvée
+      if (s && s.max_power > 0) {
+        return { power: s.power, max_power: s.max_power };
+      }
+
+      // ⏳ Attente avant nouvelle tentative
+      await new Promise(r => setTimeout(r, delay));
+    } catch {
+      // on ignore et on retente
+    }
+  }
+
+  // ❌ après X tentatives → on abandonne
+  return { power: 0, max_power: 0 };
+}
+
+function getPowerBadge(power, maxPower) {
+  if (maxPower > 0 && power === maxPower) {
+    return `<span class="badge badge-green">●</span>`;
+  }
+
+  if (power < 5) {
+    return `<span class="badge badge-red">●</span>`;
+  }
+
+  return `<span class="badge badge-yellow">●</span>`;
+}
+
+// Fonction pour trier et formater les membres
+function getSortedMembers(members) {
+  const roles = {
+    "*": "Officier",
+    "+": "Membre",
+    "-": "Recrue"
+  };
+
+  return members
+    .filter(m => !m.startsWith("**")) // supprimer les chefs
+    .map(m => {
+      const prefix = m[0];
+      const name = m.slice(1);
+      const role = roles[prefix] || "Inconnu";
+      return { name, role };
+    })
+    .sort((a, b) => ["Officier", "Membre", "Recrue"].indexOf(a.role) - ["Officier", "Membre", "Recrue"].indexOf(b.role));
+}
+
 // --------------------- Joueur ---------------------
 formPlayer.addEventListener("submit", async e => {
   e.preventDefault();
@@ -46,7 +102,7 @@ formCountry.addEventListener("submit", async e => {
     const res = await fetch(`${WORKER_URL}/country/${server}/${country}`);
     if (!res.ok) throw new Error("Pays non trouvé");
     const data = await res.json();
-    displayCountry(data);
+    displayCountry(data, server);
   } catch (err) {
     resultsDiv.innerHTML = `Erreur : ${err.message}`;
   }
@@ -63,7 +119,6 @@ function displayPlayer(player, server) {
 
   resultsDiv.innerHTML = `
     <div class="player-card">
-      <!-- Colonne gauche : tête + pseudo + description + stats -->
       <div class="player-left">
         <div class="player-header">
           <img src="${player.skin.head}" class="head" alt="Skin head">
@@ -72,6 +127,7 @@ function displayPlayer(player, server) {
         <p>${player.description || 'Aucune description'}</p>
         <h3>Stats serveur : ${server}</h3>
         <ul>
+          <li> Dernière connexion : ${s.last_connection || 'N/A'}</li>
           <li>Pays : ${s.country || 'N/A'}</li>
           <li>Rank : ${s.country_rank || 'N/A'}</li>
           <li>Power : ${s.power}/${s.max_power}</li>
@@ -88,7 +144,6 @@ function displayPlayer(player, server) {
         </ul>
       </div>
 
-      <!-- Colonne droite : corps du skin + graphique -->
       <div class="player-right">
         <img src="${player.skin.body}" class="body" alt="Skin body">
         <canvas id="playtimeChart"></canvas>
@@ -112,13 +167,14 @@ function displayPlayer(player, server) {
   });
 }
 
-
 // --------------------- Affichage Pays ---------------------
-function displayCountry(country) {
+function displayCountry(country, server) {
   if (!country) {
     resultsDiv.innerHTML = "Aucun pays trouvé.";
     return;
   }
+
+  const sortedMembers = getSortedMembers(country.members);
 
   resultsDiv.innerHTML = `
     <div class="country-card">
@@ -126,7 +182,8 @@ function displayCountry(country) {
         <img src="data:image/png;base64,${country.flag}" alt="Drapeau ${country.name}" class="country-flag">
         <h2>${country.name} (${country.base_name})</h2>
       </div>
-      <p>Serveur : ${country.server}</p>
+
+      <p>Date de création : ${country.creation_date}</p>
       <p>Dirigeant : ${country.leader}</p>
       <p>Membres : ${country.count_members}</p>
       <p>Banque : ${country.bank}</p>
@@ -134,8 +191,50 @@ function displayCountry(country) {
       <p>Claims : ${country.count_claims}</p>
       <p>MMR : ${country.mmr} — Level : ${country.level}</p>
       <p>Description : ${country.description || 'N/A'}</p>
-      <p>Alliés : ${(country.allies || []).join(', ') || 'Aucun'}</p>
-      <p>Ennemis : ${(country.enemies || []).join(', ') || 'Aucun'}</p>
+
+      <div id="member-filters">
+        <button data-role="Officier">Officiers</button>
+        <button data-role="Membre">Membres</button>
+        <button data-role="Recrue">Recrues</button>
+      </div>
+      <ul id="member-list"></ul>
     </div>
   `;
+
+  const memberFilters = document.getElementById("member-filters");
+  const memberList = document.getElementById("member-list");
+
+  memberFilters.addEventListener("click", async (e) => {
+    if (e.target.tagName !== "BUTTON") return;
+    const role = e.target.dataset.role;
+
+    memberList.innerHTML = "Chargement...";
+
+    const filteredMembers = sortedMembers.filter(m => m.role === role);
+
+    // Fetch seulement pour les membres filtrés
+    const membersData = await Promise.allSettled(
+  filteredMembers.map(async m => {
+    const stats = await fetchUserWithRetry(m.name, server);
+    return { ...m, ...stats };
+  })
+);
+
+   memberList.innerHTML = membersData.map(m => {
+  if (m.status !== "fulfilled") {
+    return `<li>Inconnu — 0/0</li>`;
+  }
+
+  const { name, power, max_power } = m.value;
+  const badge = getPowerBadge(power, max_power);
+
+  return `
+    <li class="member-item">
+      ${badge}
+      <strong>${name}</strong>
+      <span class="power">${power}/${max_power}</span>
+    </li>
+  `;
+}).join('');
+  });
 }

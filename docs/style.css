@@ -181,3 +181,29 @@ canvas {
     align-items: flex-start;
   }
 }
+
+.member-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.power {
+  margin-left: auto;
+}
+
+.badge {
+  font-size: 30px;
+}
+
+.badge-green {
+  color: #2ecc71;
+}
+
+.badge-yellow {
+  color: #f1c40f;
+}
+
+.badge-red {
+  color: #e74c3c;
+}
