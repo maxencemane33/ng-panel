@@ -200,30 +200,59 @@ function displayCountry(country, server) {
     </div>
   `;
 
-  const memberFilters = document.getElementById("member-filters");
-  const memberList = document.getElementById("member-list");
+const memberFilters = document.getElementById("member-filters");
+const memberList = document.getElementById("member-list");
 
-  memberFilters.addEventListener("click", async (e) => {
-    if (e.target.tagName !== "BUTTON") return;
-    const role = e.target.dataset.role;
-    memberList.innerHTML = "Chargement...";
+memberFilters.addEventListener("click", async (e) => {
+  if (e.target.tagName !== "BUTTON") return;
+  const role = e.target.dataset.role;
+  memberList.innerHTML = "Chargement...";
 
-    const filteredMembers = sortedMembers.filter(m => m.role === role);
+  const filteredMembers = sortedMembers.filter(m => m.role === role);
 
-    const membersData = await Promise.allSettled(
-      filteredMembers.map(m => fetchUserWithRetry(m.name, server).then(stats => ({ ...m, ...stats })))
-    );
+  const membersData = await Promise.allSettled(
+    filteredMembers.map(async m => {
+      try {
+        const res = await fetch(`${WORKER_URL}/user/${m.name}?server=${server}`);
+        const data = await res.json();
+        const s = data.servers?.[server] || {};
+        return {
+          ...m,
+          power: s.power || 0,
+          max_power: s.max_power || 0,
+          last_connection: s.last_connection || null
+        };
+      } catch {
+        return { ...m, power: 0, max_power: 0, last_connection: null };
+      }
+    })
+  );
 
-    memberList.innerHTML = membersData.map(m => {
-      if (m.status !== "fulfilled") return `<li>Inconnu — 0/0</li>`;
-      const { name, power, max_power } = m.value;
-      const badge = getPowerBadge(power, max_power);
-      return `
-        <li class="member-item">
-          ${badge} <strong>${name}</strong> <span class="power">${power}/${max_power}</span>
-        </li>
-      `;
-    }).join('');
-  });
+  memberList.innerHTML = membersData.map(m => {
+    if (m.status !== "fulfilled") return `<li>Inconnu — 0/0 — N/A</li>`;
+
+    const { name, power, max_power, last_connection } = m.value;
+    const badge = getPowerBadge(power, max_power);
+
+    // Calcul du temps depuis la dernière connexion
+    let offlineText = "N/A";
+    if (last_connection) {
+      const diffMs = Date.now() - new Date(last_connection).getTime();
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      const diffHours = Math.floor((diffMs / (1000 * 60 * 60)) % 24);
+      offlineText = `${diffDays}j ${diffHours}h depuis la dernière connexion`;
+    }
+
+    return `
+      <li class="member-item">
+        ${badge} <strong>${name}</strong>
+        <span class="power">${power}/${max_power}</span>
+        <span class="offline-time">${offlineText}</span>
+      </li>
+    `;
+  }).join('');
+});
+
+
 }
 
