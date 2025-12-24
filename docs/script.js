@@ -125,7 +125,7 @@ function displayPlayer(player, server) {
           <h2>${player.username}</h2>
         </div>
         <p>${player.description || 'Aucune description'}</p>
-        <h3>Stats serveur : ${server}</h3>
+        <h3>Grade : ${s.groups.length >= 2 ? s.groups[s.groups.length - 2] : ''}</h3>
         <ul>
           <li>Dernière connexion : ${s.last_connection || 'N/A'}</li>
           <li>Pays : ${s.country || 'N/A'}</li>
@@ -180,7 +180,7 @@ function displayCountry(country, server) {
     <div class="country-card">
       <div class="country-header">
         <img src="data:image/png;base64,${country.flag}" alt="Drapeau ${country.name}" class="country-flag">
-        <h2>${country.name} (${country.base_name})</h2>
+        <h2>${country.name} </h2>
       </div>
       <p>Date de création : ${country.creation_date}</p>
       <p>Dirigeant : ${country.leader}</p>
@@ -192,9 +192,9 @@ function displayCountry(country, server) {
       <p>Description : ${country.description || 'N/A'}</p>
 
       <div id="member-filters">
-        <button data-role="Officier">Officiers</button>
-        <button data-role="Membre">Membres</button>
-        <button data-role="Recrue">Recrues</button>
+        <button id="but" data-role="Officier">Officiers</button>
+        <button id="but" data-role="Membre">Membres</button>
+        <button id="but" data-role="Recrue">Recrues</button>
       </div>
       <ul id="member-list"></ul>
     </div>
