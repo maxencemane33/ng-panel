@@ -110,11 +110,11 @@ function displayPlayer(player, server) {
         <p>${player.description || 'Aucune description'}</p>
         <h3>Grade : ${s.groups.length >= 2 ? s.groups[s.groups.length - 2] : ''}</h3>
         <ul>
-          <li>Dernière connexion : ${s.last_connection || 'N/A'}</li>
-          <li>Pays : ${s.country || 'N/A'}</li>
-          <li>Rank : ${s.country_rank || 'N/A'}</li>
-          <li>Power : ${s.power}/${s.max_power}</li>
-          <li>Playtime : ${(s.playtime/3600).toFixed(2)}h</li>
+          <li><strong>Dernière connexion : </strong>${s.last_connection || 'N/A'}</li>
+          <li><strong>Pays :</strong> ${s.country || 'N/A'}</li>
+          <li><strong>Rank : </strong>${s.country_rank || 'N/A'}</li>
+          <li><strong>Power : </strong>${s.power}/${s.max_power}</li>
+          <li><strong>Playtime : </strong>${(s.playtime/3600).toFixed(2)}h</li>
         </ul>
         <h4>Stats métiers :</h4>
         <ul>
@@ -189,23 +189,32 @@ function displayCountry(country, server) {
         <img src="data:image/png;base64,${country.flag}" class="country-flag" alt="Drapeau">
         <h2>${country.name}</h2>
       </div>
-      <p>Date de création : ${country.creation_date}</p>
-      <p>Dirigeant : ${country.leader}</p>
-      <p>Membres : ${country.count_members}</p>
-      <p>Banque : ${country.bank}</p>
-      <p>Puissance : ${country.power}/${country.maxpower}</p>
-      <p>Claims : ${country.count_claims}</p>
-      <p>MMR : ${country.mmr} — Level : ${country.level}</p>
-      <p>Description : ${country.description || 'N/A'}</p>
+      <p><strong>Date de création :</strong> ${country.creation_date}</p>
+      <p><strong>Dirigeant :</strong> ${country.leader}</p>
+      <p><strong>Membres : </strong>${country.count_members}</p>
+      <p><strong>Banque :</strong> ${country.bank}</p>
+      <p><strong>Puissance :</strong> ${country.power}/${country.maxpower}</p>
+      <p><strong>Claims :</strong> ${country.count_claims}</p>
+      <p><strong>MMR : </strong>${country.mmr} — Level : ${country.level}</p>
+      <p><strong>Description :</strong> ${country.description || 'N/A'}</p>
 
       <div id="member-filters">
+        <button id="load-notations" class="but">📊 Voir les notations</button>
         <button class="but" data-role="Officier">Officiers</button>
         <button class="but" data-role="Membre">Membres</button>
         <button class="but" data-role="Recrue">Recrues</button>
       </div>
       <ul id="member-list"></ul>
+        <div id="notations-container"></div>
     </div>
   `;
+const notationsBtn = document.getElementById("load-notations");
+
+if (notationsBtn) {
+  notationsBtn.addEventListener("click", () => {
+    loadCountryNotations(country.name, server);
+  });
+}
 
   const memberFilters = document.getElementById("member-filters");
   const memberList = document.getElementById("member-list");
@@ -236,3 +245,135 @@ function displayCountry(country, server) {
     }).join('');
   });
 }
+
+// --------------------- NOTATIONS PAYS ---------------------
+
+/**
+ * Calcule automatiquement la semaine actuelle pour l'API
+ */
+function getCurrentApiWeek() {
+  const now = new Date();
+
+  // Calcul du lundi de la semaine actuelle
+  const day = now.getDay(); // 0 = dimanche, 1 = lundi, ...
+  const diffToMonday = (day === 0 ? -6 : 1 - day); // si dimanche, recule de 6 jours
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + diffToMonday);
+
+  // Référence pour la semaine 1 de l'API
+  const refDate = new Date("2023-01-02"); // lundi 2 janvier 2023 = semaine 1 API
+  const diffWeeks = Math.floor((monday - refDate) / (7 * 24 * 60 * 60 * 1000));
+
+  return 1 + diffWeeks; // +1 car semaine 1 = référence
+}
+
+/**
+ * Charge et affiche les notations d'un pays
+ * Le chargement se fait uniquement au clic (lazy loading)
+ * @param {string} countryName
+ * @param {string} server
+ */
+async function loadCountryNotations(countryName, server) {
+  const container = document.getElementById("notations-container");
+  if (!container) return;
+
+  const safe = val => val == null ? 0 : val;
+
+  container.innerHTML = "Chargement des notations...";
+
+  try {
+    const currentWeek = getCurrentApiWeek()+2763; // récupère la semaine actuelle
+    const res = await fetch(`${WORKER_URL}/notations?server=${server}&country=${encodeURIComponent(countryName)}&week=${currentWeek}`);
+    if (!res.ok) throw new Error("Impossible de charger les notations");
+
+    const data = await res.json();
+
+    if (!Array.isArray(data) || data.length === 0) {
+      container.innerHTML = `Aucune notation disponible pour ce pays (semaine ${currentWeek}).`;
+      return;
+    }
+
+    const entry = data[0]; // entrée correspondant au pays
+
+    // Section infos clés
+    let html = `
+      <div class="notation-block">
+        <h4>Informations clés (Semaine ${currentWeek})</h4>
+        <ul>
+          <li><strong>TOP :</strong> ${safe(entry.rang)}</li>
+          <li><strong>Total :</strong> ${safe(entry.total)}</li>
+          <li><strong>Bourse :</strong> ${safe(entry.bourse)}</li>
+          <li><strong>UNESCO Bourse :</strong> ${safe(entry.unesco_bourse)}</li>
+        </ul>
+      </div>
+    `;
+
+    // Section notations principales
+    html += `
+      <div class="notation-block">
+        <h4>Notations principales</h4>
+        <ul>
+          <li><strong>Activité : </strong>${safe(entry.activity)}</li>
+          <li><strong>Gestion : </strong>${safe(entry.gestion)}</li>
+          <li><strong>Skills : </strong>${safe(entry.skills)}</li>
+          <li><strong>Economie : </strong>${safe(entry.econ)}</li>
+          <li><strong>Militaire : </strong>${safe(entry.military)}</li>
+          <li><strong>Antimatter : </strong>${safe(entry.antim)}</li>
+          <li><strong>Redmatter : </strong>${safe(entry.red)}</li>
+          <li><strong>Endbringer : </strong>${safe(entry.endbringer)}</li>
+          <li><strong>Fusee : </strong>${safe(entry.fusee)}</li>
+          <li><strong>UNESCO : </strong>${safe(entry.unesco)}</li>
+        </ul>
+      </div>
+    `;
+
+    // Section architecture + staff
+    const arch = entry|| {};
+    const architectureTotal = (
+      safe(arch.coherence_style) +
+      safe(arch.activite_recente) +
+      safe(arch.blocs_catalogue) +
+      safe(arch.trou_missiles) +
+      safe(arch.habitabilite_maison) +
+      safe(arch.biome_coherent) +
+      safe(arch.batiments_abandonnes) +
+      safe(arch.terraforming_realiste) +
+      safe(arch.utilisation_schematica) +
+      safe(arch.coherence_lumieres) +
+      safe(arch.roleplay_pays) +
+      safe(arch.organics) +
+      safe(arch.terraforming) +
+      safe(arch.beaute)
+    ) * safe(arch.surface_construite || 1);
+
+    html += `
+      <div class="notation-block">
+        <h4>Architecture — Total calculé : ${architectureTotal.toFixed(2)}</h4>
+        <ul>
+         <li>Coherence Style : </strong>${safe(arch.coherence_style)}</li>
+  <li><strong>Activité Récente : </strong>${safe(arch.activite_recente)}</li>
+  <li><strong>Blocs Catalogue : </strong>${safe(arch.blocs_catalogue)}</li>
+  <li><strong>Surface Construite : </strong>${safe(arch.surface_construite)}</li>
+  <li><strong>Trou Missiles : </strong>${safe(arch.trou_missiles)}</li>
+  <li><strong>Habitabilité Maison : </strong>${safe(arch.habitabilite_maison)}</li>
+  <li><strong>Biome Coherent : </strong>${safe(arch.biome_coherent)}</li>
+  <li><strong>Bâtiments Abandonnés : </strong>${safe(arch.batiments_abandonnes)}</li>
+  <li><strong>Terraforming Réaliste : </strong>${safe(arch.terraforming_realiste)}</li>
+  <li><strong>Utilisation Schématique : </strong>${safe(arch.utilisation_schematica)}</li>
+  <li><strong>Coherence Lumières : </strong>${safe(arch.coherence_lumieres)}</li>
+  <li><strong>Roleplay Pays : </strong>${safe(arch.roleplay_pays)}</li>
+  <li><strong>Organics : </strong>${safe(arch.organics)}</li>
+  <li><strong>Terraforming : </strong>${safe(arch.terraforming)}</li>
+  <li><strong>Béauté : </strong>${safe(arch.beaute)}</li>
+  <li><strong>Staff :</strong> ${safe(entry.staff)}</li>
+      </div>
+    `;
+
+    container.innerHTML = html;
+
+  } catch (err) {
+    container.innerHTML = "Erreur lors du chargement des notations ❌";
+    console.error(err);
+  }
+}
+

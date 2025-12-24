@@ -20,6 +20,23 @@ async function handleRequest(request) {
     });
   }
 
+if (url.pathname === "/notations") {
+  const apiUrl = `https://publicapi.nationsglory.fr/notations${url.search}`;
+  const apiRes = await fetch(apiUrl, {
+    headers: {
+      "Authorization": `Bearer ${API_KEY}`,
+      "Accept": "application/json"
+    }
+  });
+  return new Response(apiRes.body, {
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*"
+    }
+  });
+}
+
+
   try {
     let data;
 
@@ -81,3 +98,4 @@ async function handleRequest(request) {
     });
   }
 }
+
