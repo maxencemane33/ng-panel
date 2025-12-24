@@ -207,3 +207,74 @@ canvas {
 .badge-red {
   color: #e74c3c;
 }
+
+.underpower-card {
+  border: 1px solid #ff4d4d;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 10px;
+  background: #1e1e1e;
+}
+
+.underpower-card h3 {
+  margin: 0;
+  color: #ff8080;
+}
+
+.danger {
+  color: #ff4d4d;
+  font-weight: bold;
+}
+
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.country-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 15px;
+}
+
+.country-card.underpower {
+  border: 2px solid #e74c3c;
+  background: #fff5f5;
+}
+
+.country-flag {
+  width: 60px;
+  height: auto;
+}
+
+.danger {
+  color: #e74c3c;
+  font-weight: bold;
+}
+
+#status {
+  text-align: center;
+  margin-bottom: 15px;
+  font-weight: bold;
+}
+
+.btn-back {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 8px 12px;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  z-index: 1000;
+  transition: background-color 0.2s;
+}
+
+.btn-back:hover {
+  background-color: #2980b9;
+}

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Alliance NG Panel</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <button id="backToMenu" class="btn-back" onclick="window.location.href='index.html'">⬅ Retour au menu</button>
+  <h1>Recherche NationsGlory</h1>
+
+  <!-- Formulaire joueur -->
+  <form id="searchPlayerForm">
+    <input type="text" name="username" placeholder="Nom du joueur" required>
+    <label for="playerServer">Serveur :</label>
+    <select id="playerServer" required>
+      <option value="" disabled selected>Choisissez un serveur</option>
+      <option value="blue">Blue</option>
+      <option value="orange">Orange</option>
+      <option value="yellow">Yellow</option>
+      <option value="white">White</option>
+      <option value="black">Black</option>
+      <option value="cyan">Cyan</option>
+      <option value="lime">Lime</option>
+      <option value="coral">Coral</option>
+      <option value="alpha">Alpha</option>
+      <option value="sigma">Sigma</option>
+      <option value="omega">Omega</option>
+      <option value="red">Red</option>
+      <option value="delta">Delta</option>
+      <option value="mocha">Mocha</option>
+      <option value="epsilon">Epsilon</option>
+      <option value="jade">Jade</option>
+    </select>
+    <button type="submit">🔍 Rechercher joueur</button>
+  </form>
+
+ 
+
+  <hr>
+
+  <!-- Résultats -->
+  <div id="results"></div>
+  
+
+  <script src="script.js"></script>
+</body>
+</html>

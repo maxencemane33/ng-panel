@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Pays en sous power – NationsGlory</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<button id="backToMenu" class="btn-back" onclick="window.location.href='index.html'">⬅ Retour au menu</button>
+  <h1>Pays en sous power</h1>
+
+  <div class="controls">
+    <label for="serverSelect">Serveur :</label>
+    <select id="serverSelect">
+      <option value="" disabled selected>Choisissez un serveur</option>
+      <option value="blue">Blue</option>
+      <option value="orange">Orange</option>
+      <option value="yellow">Yellow</option>
+      <option value="white">White</option>
+      <option value="black">Black</option>
+      <option value="cyan">Cyan</option>
+      <option value="lime">Lime</option>
+      <option value="coral">Coral</option>
+      <option value="alpha">Alpha</option>
+      <option value="sigma">Sigma</option>
+      <option value="omega">Omega</option>
+      <option value="red">Red</option>
+      <option value="delta">Delta</option>
+      <option value="mocha">Mocha</option>
+      <option value="epsilon">Epsilon</option>
+      <option value="jade">Jade</option>n>
+      <option value="red">Red</option>
+    </select>
+    <button id="loadBtn">Charger</button>
+  </div>
+
+  <div id="status"></div>
+  <div id="results" class="country-grid"></div>
+
+  <script src="underpower.js"></script>
+</body>
+</html>
