@@ -5,6 +5,7 @@ const loadBtn = document.getElementById("loadBtn");
 const resultsDiv = document.getElementById("results");
 const statusDiv = document.getElementById("status");
 
+
 loadBtn.addEventListener("click", () => {
   loadUnderpower(serverSelect.value);
 });
@@ -33,7 +34,7 @@ async function loadUnderpower(server) {
       if (r.status !== "fulfilled") return;
       const c = r.value;
 
-      if (c.count_claims > c.power) {
+      if (c.count_claims > c.power - marge.value) {
         underpowered.push(c);
       }
     });
@@ -71,8 +72,6 @@ function displayCountries(countries, server) {
             <img src="data:image/png;base64,${c.flag}" class="country-flag">
             <h2>${c.name}</h2>
           </div>
-
-          
           <p><strong>Leader :</strong> ${c.leader}</p>
           <p><strong>Power :</strong> ${c.power}/${c.maxpower}</p>
           <p><strong>Claims :</strong> ${c.count_claims}</p>

@@ -192,9 +192,9 @@ function displayCountry(country, server) {
       <p>Description : ${country.description || 'N/A'}</p>
 
       <div id="member-filters">
-        <button id="but" data-role="Officier">Officiers</button>
-        <button id="but" data-role="Membre">Membres</button>
-        <button id="but" data-role="Recrue">Recrues</button>
+        <button class="but" data-role="Officier">Officiers</button>
+        <button class="but" data-role="Membre">Membres</button>
+        <button class="but" data-role="Recrue">Recrues</button>
       </div>
       <ul id="member-list"></ul>
     </div>

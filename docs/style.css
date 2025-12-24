@@ -275,7 +275,7 @@ canvas {
   background-color: #2980b9;
 }
 
-#but {
+.but {
   padding: 8px 16px;
   background-color: #3498db;
   color: white;
