@@ -1,23 +1,21 @@
-// --------------------- Sélection des éléments du DOM ---------------------
-const formPlayer = document.getElementById("searchPlayerForm");   // Formulaire recherche joueur
-const formCountry = document.getElementById("searchCountryForm"); // Formulaire recherche pays
-const resultsDiv = document.getElementById("results");            // Conteneur des résultats
-const playerServerSelect = document.getElementById("playerServer");   // Sélecteur serveur joueur
-const countryServerSelect = document.getElementById("countryServer"); // Sélecteur serveur pays
+// --------------------- Sélection des éléments ---------------------
+const formPlayer = document.getElementById("searchPlayerForm");
+const formCountry = document.getElementById("searchCountryForm");
+const resultsDiv = document.getElementById("results");
+const playerServerSelect = document.getElementById("playerServer");
+const countryServerSelect = document.getElementById("countryServer");
 
 const WORKER_URL = "https://ng-panel.ng-panel.workers.dev";
 
-// --------------------- Fonctions utilitaires ---------------------
+// --------------------- Utilitaires ---------------------
 
 /**
- * Fonction pour trier et formater les membres d'un pays par rôle
- * @param {Array} members - liste des membres bruts avec préfixes (*,+,-)
- * @returns {Array} - liste des membres {name, role} triée
+ * Trie et formate les membres d'un pays par rôle
  */
 function getSortedMembers(members) {
   const roles = { "*": "Officier", "+": "Membre", "-": "Recrue" };
   return members
-    .filter(m => !m.startsWith("**")) // Supprimer les chefs
+    .filter(m => !m.startsWith("**"))
     .map(m => {
       const prefix = m[0];
       const name = m.slice(1);
@@ -27,10 +25,7 @@ function getSortedMembers(members) {
 }
 
 /**
- * Badge couleur selon la puissance
- * @param {number} power 
- * @param {number} maxPower 
- * @returns {string} HTML d'un badge
+ * Badge couleur selon le power
  */
 function getPowerBadge(power, maxPower) {
   if (maxPower > 0 && power === maxPower) return `<span class="badge badge-green">●</span>`;
@@ -39,25 +34,37 @@ function getPowerBadge(power, maxPower) {
 }
 
 /**
- * Fonction pour fetcher un joueur avec retry si max_power = 0
- * @param {string} username 
- * @param {string} server 
- * @param {number} retries 
- * @param {number} delay - en ms
+ * Calcule le temps offline depuis last_connection
  */
-async function fetchUserWithRetry(username, server, retries = 10, delay = 1) {
+function formatOfflineTime(lastConnection) {
+  if (!lastConnection) return "N/A";
+  const lastDate = new Date(lastConnection);
+  if (isNaN(lastDate)) return "N/A";
+  const diffMs = Date.now() - lastDate.getTime();
+  const diffHours = Math.floor(diffMs / 1000 / 3600);
+  const days = Math.floor(diffHours / 24);
+  const hours = diffHours % 24;
+  return `${days}j ${hours}h`;
+}
+
+/**
+ * Fetch un joueur avec retry jusqu'à obtenir max_power > 0 et last_connection
+ */
+async function fetchUserWithRetry(username, server, retries = 10, delay = 500) {
   for (let i = 0; i < retries; i++) {
     try {
       const res = await fetch(`${WORKER_URL}/user/${username}?server=${server}`);
       const data = await res.json();
       const s = data.servers?.[server];
-      if (s && s.max_power > 0) return { power: s.power, max_power: s.max_power };
+      if (s && s.max_power > 0 && s.last_connection) {
+        return { username: data.username, power: s.power, max_power: s.max_power, last_connection: s.last_connection };
+      }
       await new Promise(r => setTimeout(r, delay));
     } catch {
       await new Promise(r => setTimeout(r, delay));
     }
   }
-  return { power: 0, max_power: 0 };
+  return { username, power: 0, max_power: 0, last_connection: null };
 }
 
 // --------------------- Recherche joueur ---------------------
@@ -78,30 +85,6 @@ if (formPlayer && playerServerSelect) {
       if (!res.ok) throw new Error("Joueur non trouvé");
       const data = await res.json();
       displayPlayer(data, server);
-    } catch (err) {
-      resultsDiv.innerHTML = `Erreur : ${err.message}`;
-    }
-  });
-}
-
-// --------------------- Recherche pays ---------------------
-if (formCountry && countryServerSelect) {
-  formCountry.addEventListener("submit", async e => {
-    e.preventDefault();
-    const country = e.target.country.value.trim();
-    const server = countryServerSelect.value;
-    if (!country || !server) {
-      resultsDiv.innerHTML = "Veuillez choisir un serveur et saisir un nom de pays.";
-      return;
-    }
-
-    resultsDiv.innerHTML = "Chargement du pays...";
-
-    try {
-      const res = await fetch(`${WORKER_URL}/country/${server}/${country}`);
-      if (!res.ok) throw new Error("Pays non trouvé");
-      const data = await res.json();
-      displayCountry(data, server);
     } catch (err) {
       resultsDiv.innerHTML = `Erreur : ${err.message}`;
     }
@@ -167,6 +150,30 @@ function displayPlayer(player, server) {
   });
 }
 
+// --------------------- Recherche pays ---------------------
+if (formCountry && countryServerSelect) {
+  formCountry.addEventListener("submit", async e => {
+    e.preventDefault();
+    const countryName = e.target.country.value.trim();
+    const server = countryServerSelect.value;
+    if (!countryName || !server) {
+      resultsDiv.innerHTML = "Veuillez saisir un pays et choisir un serveur.";
+      return;
+    }
+
+    resultsDiv.innerHTML = "Chargement du pays...";
+
+    try {
+      const res = await fetch(`${WORKER_URL}/country/${server}/${countryName}`);
+      if (!res.ok) throw new Error("Pays non trouvé");
+      const countryData = await res.json();
+      displayCountry(countryData, server);
+    } catch (err) {
+      resultsDiv.innerHTML = `Erreur : ${err.message}`;
+    }
+  });
+}
+
 // --------------------- Affichage pays ---------------------
 function displayCountry(country, server) {
   if (!country) {
@@ -179,8 +186,8 @@ function displayCountry(country, server) {
   resultsDiv.innerHTML = `
     <div class="country-card">
       <div class="country-header">
-        <img src="data:image/png;base64,${country.flag}" alt="Drapeau ${country.name}" class="country-flag">
-        <h2>${country.name} </h2>
+        <img src="data:image/png;base64,${country.flag}" class="country-flag" alt="Drapeau">
+        <h2>${country.name}</h2>
       </div>
       <p>Date de création : ${country.creation_date}</p>
       <p>Dirigeant : ${country.leader}</p>
@@ -200,59 +207,32 @@ function displayCountry(country, server) {
     </div>
   `;
 
-const memberFilters = document.getElementById("member-filters");
-const memberList = document.getElementById("member-list");
+  const memberFilters = document.getElementById("member-filters");
+  const memberList = document.getElementById("member-list");
 
-memberFilters.addEventListener("click", async (e) => {
-  if (e.target.tagName !== "BUTTON") return;
-  const role = e.target.dataset.role;
-  memberList.innerHTML = "Chargement...";
+  memberFilters.addEventListener("click", async (e) => {
+    if (e.target.tagName !== "BUTTON") return;
+    const role = e.target.dataset.role;
+    memberList.innerHTML = "Chargement...";
 
-  const filteredMembers = sortedMembers.filter(m => m.role === role);
+    const filteredMembers = sortedMembers.filter(m => m.role === role);
 
-  const membersData = await Promise.allSettled(
-    filteredMembers.map(async m => {
-      try {
-        const res = await fetch(`${WORKER_URL}/user/${m.name}?server=${server}`);
-        const data = await res.json();
-        const s = data.servers?.[server] || {};
-        return {
-          ...m,
-          power: s.power || 0,
-          max_power: s.max_power || 0,
-          last_connection: s.last_connection || null
-        };
-      } catch {
-        return { ...m, power: 0, max_power: 0, last_connection: null };
-      }
-    })
-  );
+    // Fetch tous les membres avec retry
+    const membersData = await Promise.allSettled(
+      filteredMembers.map(m => fetchUserWithRetry(m.name, server))
+    );
 
-  memberList.innerHTML = membersData.map(m => {
-    if (m.status !== "fulfilled") return `<li>Inconnu — 0/0 — N/A</li>`;
+    memberList.innerHTML = membersData.map(m => {
+      if (m.status !== "fulfilled") return `<li>Inconnu — 0/0 — NA</li>`;
+      const { username, power, max_power, last_connection } = m.value;
+      const badge = getPowerBadge(power, max_power);
+      const offlineTime = formatOfflineTime(last_connection);
 
-    const { name, power, max_power, last_connection } = m.value;
-    const badge = getPowerBadge(power, max_power);
-
-    // Calcul du temps depuis la dernière connexion
-    let offlineText = "N/A";
-    if (last_connection) {
-      const diffMs = Date.now() - new Date(last_connection).getTime();
-      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-      const diffHours = Math.floor((diffMs / (1000 * 60 * 60)) % 24);
-      offlineText = `${diffDays}j ${diffHours}h depuis la dernière connexion`;
-    }
-
-    return `
-      <li class="member-item">
-        ${badge} <strong>${name}</strong>
-        <span class="power">${power}/${max_power}</span>
-        <span class="offline-time">${offlineText}</span>
-      </li>
-    `;
-  }).join('');
-});
-
-
+      return `
+        <li class="member-item">
+          ${badge} <strong>${username}</strong> <span class="power">${power}/${max_power}</span> <span class="offline-time">${offlineTime}</span>
+        </li>
+      `;
+    }).join('');
+  });
 }
-
