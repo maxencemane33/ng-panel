@@ -175,7 +175,9 @@ if (formCountry && countryServerSelect) {
 }
 
 // --------------------- Affichage pays ---------------------
-function displayCountry(country, server) {
+async function displayCountry(country, server) {
+  const leader = await fetchLeaderData(country.leader, server);
+
   if (!country) {
     resultsDiv.innerHTML = "Aucun pays trouvé.";
     return;
@@ -190,7 +192,15 @@ function displayCountry(country, server) {
         <h2>${country.name}</h2>
       </div>
       <p><strong>Date de création :</strong> ${country.creation_date}</p>
-      <p><strong>Dirigeant :</strong> ${country.leader}</p>
+      <div class="leader-box">
+      <strong>Dirigeant :</strong>
+  <img src="${leader.head}" class="leader-head" alt="Leader head">
+  <div class="leader-text">
+    ${leader.name}
+    <span class="power">${leader.power}/${leader.max_power}</span>
+  </div>
+</div>
+
       <p><strong>Membres : </strong>${country.count_members}</p>
       <p><strong>Banque :</strong> ${country.bank}</p>
       <p><strong>Puissance :</strong> ${country.power}/${country.maxpower}</p>
@@ -377,3 +387,26 @@ async function loadCountryNotations(countryName, server) {
   }
 }
 
+async function fetchLeaderData(username, server) {
+  try {
+    const res = await fetch(`${WORKER_URL}/user/${username}?server=${server}`);
+    if (!res.ok) throw new Error("Leader introuvable");
+
+    const data = await res.json();
+    const s = data.servers?.[server];
+
+    return {
+      name: data.username,
+      head: data.skin?.head || "",
+      power: s?.power ?? 0,
+      max_power: s?.max_power ?? 0
+    };
+  } catch {
+    return {
+      name: username,
+      head: "",
+      power: 0,
+      max_power: 0
+    };
+  }
+}

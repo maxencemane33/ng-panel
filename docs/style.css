@@ -267,7 +267,6 @@ canvas {
   border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
-  z-index: 1000;
   transition: background-color 0.2s;
 }
 
@@ -291,4 +290,22 @@ canvas {
   justify-content: center;
   gap: 10px;
   margin-bottom: 20px;
+}
+.leader-box {
+  display: flex;
+  align-items: center; /* centre verticalement image + texte */
+  gap: 10px;
+  margin: 8px 0;
+}
+
+.leader-head {
+  width: 32px;
+  height: 32px;
+  image-rendering: pixelated;
+  display: block; /* IMPORTANT */
+}
+
+.power {
+  margin: 10px;
+  font-weight: bold;
 }
