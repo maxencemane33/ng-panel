@@ -309,3 +309,39 @@ canvas {
   margin: 10px;
   font-weight: bold;
 }
+
+/* 🌈 Texte arc-en-ciel animé */
+@keyframes rainbow {
+  0% { color: red; }
+  14% { color: orange; }
+  28% { color: yellow; }
+  42% { color: green; }
+  57% { color: cyan; }
+  71% { color: blue; }
+  85% { color: violet; }
+  100% { color: red; }
+}
+
+/* 🌀 Mouvement chaotique */
+@keyframes chaosMove {
+  0%   { transform: translate(0, 0) rotate(0deg); }
+  25%  { transform: translate(100px, -50px) rotate(10deg); }
+  50%  { transform: translate(-80px, 60px) rotate(-15deg); }
+  75%  { transform: translate(60px, 120px) rotate(8deg); }
+  100% { transform: translate(0, 0) rotate(0deg); }
+}
+.romain-chaos {
+  position: fixed;
+  font-size: 64px;
+  font-weight: 900;
+  pointer-events: none;
+  z-index: 9999;
+  white-space: nowrap;
+}
+
+.romain-chaos-inner {
+  animation:
+    rainbow 1.5s linear infinite,
+    chaosMove 3s ease-in-out infinite;
+  transform: translate(-50%, -50%);
+}

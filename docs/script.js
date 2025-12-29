@@ -73,6 +73,33 @@ if (formPlayer && playerServerSelect) {
     e.preventDefault();
     const username = e.target.username.value.trim();
     const server = playerServerSelect.value;
+  // 🥚 EASTER EGG ULTIME
+if (username.toLowerCase() === "romain") {
+  resultsDiv.innerHTML = "";
+
+  const TEXT = "DAAAARRRRRBBBBBAAAAAASSSSSS";
+  const COUNT = 12; // nombre de textes affichés
+
+  for (let i = 0; i < COUNT; i++) {
+   const el = document.createElement("div");
+el.className = "romain-chaos";
+
+const inner = document.createElement("div");
+inner.className = "romain-chaos-inner";
+inner.textContent = TEXT;
+
+el.style.top = Math.random() * 90 + "vh";
+el.style.left = Math.random() * 90 + "vw";
+inner.style.animationDelay = `${Math.random() * 1.5}s`;
+
+el.appendChild(inner);
+document.body.appendChild(el);
+  }
+
+  return;
+}
+
+
     if (!username || !server) {
       resultsDiv.innerHTML = "Veuillez choisir un serveur et saisir un nom de joueur.";
       return;
