@@ -50,7 +50,7 @@ function formatOfflineTime(lastConnection) {
 /**
  * Fetch un joueur avec retry jusqu'à obtenir max_power > 0 et last_connection
  */
-async function fetchUserWithRetry(username, server, retries = 100, delay = 5) {
+async function fetchUserWithRetry(username, server, retries = 20, delay = 500) {
   for (let i = 0; i < retries; i++) {
     try {
       const res = await fetch(`${WORKER_URL}/user/${username}?server=${server}`);
