@@ -50,7 +50,10 @@ function formatOfflineTime(lastConnection) {
 /**
  * Fetch un joueur avec retry jusqu'à obtenir max_power > 0 et last_connection
  */
-async function fetchUserWithRetry(username, server, retries = 10, delay = 500) {
+/**
+ * Récupère au moins power immédiatement, puis complète max_power et last_connection.
+ */
+async function fetchUserWithRetry(username, server, retries = 60, delay = 500) {
   for (let i = 0; i < retries; i++) {
     try {
       const res = await fetch(`${WORKER_URL}/user/${username}?server=${server}`);
@@ -66,6 +69,7 @@ async function fetchUserWithRetry(username, server, retries = 10, delay = 500) {
   }
   return { username, power: 0, max_power: 0, last_connection: null };
 }
+
 
 // --------------------- Recherche joueur ---------------------
 if (formPlayer && playerServerSelect) {
@@ -98,7 +102,10 @@ document.body.appendChild(el);
 
   return;
 }
-
+if (username.toLowerCase() === "chat de feu") {
+  resultsDiv.innerHTML = `<img src="https://koreus.cdn.li/media/200801/14-animal-insolite09.jpg" alt="Chat de feu" style="max-width:100%;">`;
+  return;
+}
 
     if (!username || !server) {
       resultsDiv.innerHTML = "Veuillez choisir un serveur et saisir un nom de joueur.";
@@ -212,6 +219,7 @@ async function displayCountry(country, server) {
 
   const sortedMembers = getSortedMembers(country.members);
 
+
   resultsDiv.innerHTML = `
     <div class="country-card">
       <div class="country-header">
@@ -237,6 +245,7 @@ async function displayCountry(country, server) {
 
       <div id="member-filters">
         <button id="load-notations" class="but">📊 Voir les notations</button>
+        <button id="load-online" class="but">🟢 Joueurs en ligne</button>
         <button class="but" data-role="Officier">Officiers</button>
         <button class="but" data-role="Membre">Membres</button>
         <button class="but" data-role="Recrue">Recrues</button>
@@ -281,6 +290,45 @@ if (notationsBtn) {
       `;
     }).join('');
   });
+
+
+const SERVERS = [
+  "blue","orange","yellow","white","black","cyan","lime","coral",
+  "alpha","sigma","omega","red","delta","mocha","epsilon","jade"
+];
+
+const onlineBtn = document.getElementById("load-online");
+if (onlineBtn) {
+  onlineBtn.addEventListener("click", async () => {
+    const memberList = document.getElementById("member-list");
+    memberList.innerHTML = "Recherche des joueurs en ligne...";
+    await new Promise(r => setTimeout(r, 50)); // pour afficher le message
+
+    const onlineMembers = [];
+
+    await Promise.all(sortedMembers.map(async (m) => {
+      for (const server of SERVERS) {
+        try {
+          const res = await fetch(`${WORKER_URL}/user/${encodeURIComponent(m.name)}/${server}`);
+          if (!res.ok) continue;
+          const data = await res.json();
+          if (data.servers?.[server]?.online) {
+            onlineMembers.push({ username: m.name, server });
+            break; // dès qu'on trouve un serveur online, on passe au membre suivant
+          }
+        } catch {}
+      }
+    }));
+
+    memberList.innerHTML = onlineMembers.length > 0
+      ? onlineMembers.map(m => `<li class="member-item">${m.username} [${m.server}]</li>`).join("")
+      : "Aucun membre actuellement en ligne.";
+  });
+}
+
+
+
+
 }
 
 // --------------------- NOTATIONS PAYS ---------------------
@@ -426,7 +474,7 @@ async function fetchLeaderData(username, server) {
       name: data.username,
       head: data.skin?.head || "",
       power: s?.power ?? 0,
-      max_power: s?.max_power ?? 0
+      max_power: s?.max_power ?? 0,
     };
   } catch {
     return {
