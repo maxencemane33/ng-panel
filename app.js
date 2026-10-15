@@ -11,8 +11,9 @@ const slug=s=>s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").re
 const fmt=n=>Number(n||0).toLocaleString("fr-FR"),num=v=>Math.max(0,parseFloat(v)||0);
 const opts=a=>a.map(x=>`<option>${x}</option>`).join("");
 const S={crafts:{},res:{},jobs:[],trades:[],schems:[]};
+const blank=()=>({id:"",name:"",out:1,ing:[["",1]]});let ed=blank();
 let tab="crafts",pseudo=localStorage.getItem("ng-pseudo")||"",sel="",pending=false,started=false;
-const TABS=[["crafts","🔨","Crafts","#3ddc84"],["res","📦","Ressources","#ffb020"],["trades","🎯","Trades","#ff5fa2"],["schems","🏗️","Schématics","#38bdf8"]];
+const TABS=[["crafts","🔨","Crafts","#3ddc84"],["recipes","📖","Recettes","#a78bfa"],["res","📦","Ressources","#ffb020"],["trades","🎯","Trades","#ff5fa2"],["schems","🏗️","Schématics","#38bdf8"]];
 const toast=m=>{const t=$("#toast");t.textContent=m;t.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(()=>t.style.display="none",2800)};
 const run=async f=>{try{await f()}catch(e){toast("Erreur : "+(e.code||e.message))}};
 
@@ -31,6 +32,12 @@ return`<article class="job"><div class="jh"><div><h3><em>${fmt(j.qty)}×</em> ${
 const rest=Object.entries(agg).sort((a,b)=>b[1]-a[1]);
 return`<section class="panel"><h2>Calculateur de craft</h2><form data-f="job" class="row"><label class="grow">Craft<input name="c" id="q" list="cl" value="${esc(sel)}" placeholder="Tracteur, Iron plate…" autocomplete="off"></label><label>Quantité<input name="n" id="n" type="number" min="1" value="1"></label><label class="chk"><input type="checkbox" id="d" name="d" checked>Décomposer les sous-crafts</label><button class="btn">＋ Ajouter aux crafts en cours</button></form><datalist id="cl">${names.map(n=>`<option value="${esc(n)}">`).join("")}</datalist><div id="prev">${prev()}</div>${names.length?"":`<div class="empty" style="margin-top:14px">Aucune recette pour l'instant. <button class="btn" data-act="seed">Importer les recettes de départ</button></div>`}</section>
 <h2>Crafts en cours (${jobs.length})</h2>${rest.length?`<section class="panel" style="border-top-color:var(--warn)"><h2>Reste à farmer, tous crafts confondus</h2><div class="grid" style="margin-top:0">${rest.map(([k,v])=>`<div class="need"><b>${fmt(v)}</b><span>${esc(k)}</span><small>${stacks(v)||"&nbsp;"}</small></div>`).join("")}</div></section>`:""}${cards||`<div class="empty">Rien en cours. Ajoute un craft avec le calculateur ☝️</div>`}`},
+
+recipes(){const names=Object.keys(S.crafts).sort((a,b)=>a.localeCompare(b)),isNew=!ed.id;
+const rows=ed.ing.map(([n,q],i)=>`<div class="row" style="margin-top:8px"><label class="grow">Ingrédient<input list="il" value="${esc(n)}" data-ri="${i}" data-rf="n" autocomplete="off" placeholder="Iron plate, Caoutchouc…"></label><label>Quantité<input type="number" min="1" value="${esc(q)}" data-ri="${i}" data-rf="q"></label><button type="button" class="ghost" data-act="rrow-del" data-i="${i}">✕</button></div>`).join("");
+const list=names.map(n=>{const c=S.crafts[n];return`<tr><td><b>${esc(n)}</b></td><td>${fmt(c.out)}</td><td>${c.ing.map(([a,q])=>fmt(q)+"× "+esc(a)).join(", ")}</td><td style="white-space:nowrap"><button type="button" class="ghost" data-act="redit" data-n="${esc(n)}">Modifier</button> <button type="button" class="ghost" data-act="rdel" data-n="${esc(n)}">✕</button></td></tr>`}).join("");
+return`<section class="panel"><h2>${isNew?"Nouvelle recette":"Modifier : "+esc(ed.name)}</h2><form data-f="recipe"><div class="row"><label class="grow">Nom du craft<input id="rn" value="${esc(ed.name)}"${isNew?"":" readonly"} required autocomplete="off" placeholder="Ex : Moissonneuse"></label><label>Quantité produite<input id="ro" type="number" min="1" value="${esc(ed.out)}"></label></div>${rows}<div class="row" style="margin-top:12px"><button type="button" class="ghost" data-act="rrow-add">＋ Ingrédient</button><button class="btn">${isNew?"Créer la recette":"Enregistrer les modifications"}</button>${isNew?"":`<button type="button" class="ghost" data-act="rnew">Annuler</button>`}</div></form>${isNew?"":`<p class="mut">Le nom ne se change pas ici (les crafts en cours l'utilisent). Pour renommer : crée une nouvelle recette, puis supprime l'ancienne.</p>`}<datalist id="il">${[...new Set([...Object.keys(S.crafts),...Object.keys(S.res)])].sort().map(n=>`<option value="${esc(n)}">`).join("")}</datalist></section>
+<input id="f" class="search" placeholder="Filtrer les recettes…"><div class="scroll"><table><tr><th>Craft</th><th>Produit</th><th>Ingrédients</th><th></th></tr>${list||`<tr><td colspan="4" class="mut">Aucune recette. Importe les recettes de départ dans l'onglet Crafts.</td></tr>`}</table></div>`},
 
 res(){const rs=Object.values(S.res).sort((a,b)=>a.name.localeCompare(b.name));
 return`<section class="panel"><h2>Ajouter ou mettre à jour une ressource</h2><form data-f="res" class="row"><label class="grow">Nom<input name="name" list="rl" required autocomplete="off" placeholder="Commence à écrire…"></label><label>Prix<input name="price" type="number" min="0" step="any"></label><label>Stock du pays<input name="stock" type="number" min="0"></label><label>Catégorie<select name="cat">${opts(["Minerai","Bloc","Agriculture","Mob drop","Craft","Autre"])}</select></label><label class="grow">Où farmer<input name="where"></label><button class="btn">Enregistrer</button></form></section>
@@ -57,21 +64,45 @@ document.addEventListener("focusout",()=>setTimeout(()=>{if(pending&&!typing())r
 async function seed(){const b=writeBatch(db),names=new Set();
 for(const[n,[out,ing]]of Object.entries(SEED)){b.set(doc(db,"crafts",slug(n)),{name:n,out,ing:ing.map(([n,q])=>({n,q}))});ing.forEach(([i])=>names.add(i))}
 names.forEach(n=>{if(!S.res[n])b.set(doc(db,"res",slug(n)),{name:n,price:0,stock:0,cat:SEED[n]?"Craft":"Autre",where:""})});await b.commit();toast("Recettes importées ✅")}
+function saveRecipe(){const name=ed.name.trim(),out=Math.max(1,parseInt(ed.out)||1);
+if(!name)return toast("Donne un nom au craft");
+if(!ed.id&&Object.keys(S.crafts).some(k=>k.toLowerCase()===name.toLowerCase()))return toast("Cette recette existe déjà : modifie-la depuis la liste");
+const canon=n=>{n=n.trim();const l=n.toLowerCase();return Object.keys(S.crafts).find(k=>k.toLowerCase()===l)||Object.keys(S.res).find(k=>k.toLowerCase()===l)||n};
+const m=new Map();for(const[n,q]of ed.ing){if(!n.trim())continue;const k=canon(n),v=parseInt(q);if(!(v>=1))return toast("Quantité invalide pour "+k);m.set(k,(m.get(k)||0)+v)}
+if(!m.size)return toast("Ajoute au moins un ingrédient");
+const ing=[...m],reach=(n,seen=new Set())=>{if(n===name)return true;if(seen.has(n))return false;seen.add(n);const c=S.crafts[n];return c?c.ing.some(([i])=>reach(i,seen)):false};
+if(ing.some(([i])=>reach(i)))return toast("Boucle : « "+name+" » se retrouve dans ses propres ingrédients");
+run(async()=>{const b=writeBatch(db),id=ed.id||slug(name);
+b.set(doc(db,"crafts",id),{name,out,ing:ing.map(([n,q])=>({n,q}))});
+ing.forEach(([n])=>{if(!S.crafts[n]&&!S.res[n])b.set(doc(db,"res",slug(n)),{name:n,price:0,stock:0,cat:"Autre",where:""})});
+await b.commit();toast("Recette enregistrée ✅");ed=blank();render()})}
+function delRecipe(n){const c=S.crafts[n];if(!c)return;
+const used=Object.entries(S.crafts).filter(([,v])=>v.ing.some(([i])=>i===n)).map(([k])=>k),jobs=S.jobs.filter(j=>j.craft===n).length;
+let m="Supprimer la recette « "+n+" » ?";if(used.length)m+="\n\nUtilisée dans : "+used.join(", ");if(jobs)m+="\n"+jobs+" craft(s) en cours l'utilisent.";
+if(confirm(m))run(async()=>{await deleteDoc(doc(db,"crafts",c.id));if(ed.id===c.id)ed=blank();toast("Recette supprimée")})}
 document.addEventListener("click",e=>{const a=e.target.closest("[data-act]");if(!a)return;const d=a.dataset;
 if(d.act==="tab"){tab=d.t;render()}
 else if(d.act==="seed")run(seed)
 else if(d.act==="logout")signOut(auth)
 else if(d.act==="copy")navigator.clipboard.writeText(d.t).then(()=>toast("Coordonnées copiées"))
 else if(d.act==="del"){if(confirm("Supprimer définitivement ?"))run(()=>deleteDoc(doc(db,d.c,d.id)))}
-else if(d.act==="fill")setGot(d.job,d.k,+d.v)});
+else if(d.act==="fill")setGot(d.job,d.k,+d.v)
+else if(d.act==="rrow-add"){ed.ing.push(["",1]);render()}
+else if(d.act==="rrow-del"){ed.ing.splice(+d.i,1);if(!ed.ing.length)ed.ing.push(["",1]);render()}
+else if(d.act==="rnew"){ed=blank();render()}
+else if(d.act==="redit"){const c=S.crafts[d.n];if(c){ed={id:c.id,name:d.n,out:c.out,ing:c.ing.map(([x,q])=>[x,q])};render();scrollTo(0,0)}}
+else if(d.act==="rdel")delRecipe(d.n)});
 function setGot(id,k,v){const j=S.jobs.find(x=>x.id===id);if(j)run(()=>updateDoc(doc(db,"jobs",id),{got:{...j.got,[k]:v}}))}
 document.addEventListener("change",e=>{const t=e.target;
 if(t.dataset.k)setGot(t.dataset.job,t.dataset.k,num(t.value));
 if(t.dataset.res)run(()=>updateDoc(doc(db,"res",t.dataset.id),{[t.dataset.res]:num(t.value)}))});
 document.addEventListener("input",e=>{const t=e.target;
+if(t.dataset.ri!==undefined)ed.ing[+t.dataset.ri][t.dataset.rf==="q"?1:0]=t.value;
+if(t.id==="rn")ed.name=t.value;
+if(t.id==="ro")ed.out=t.value;
 if(["q","n","d"].includes(t.id)){sel=$("#q").value;$("#prev").innerHTML=prev()}
 if(t.id==="f"){const v=t.value.toLowerCase();document.querySelectorAll("#main tr:not(:first-child),#main .card[data-flt]").forEach(r=>r.hidden=!(r.dataset.flt||r.textContent).toLowerCase().includes(v))}});
-document.addEventListener("submit",e=>{const f=e.target,k=f.dataset.f;if(!k)return;e.preventDefault();const d=Object.fromEntries(new FormData(f));
+document.addEventListener("submit",e=>{const f=e.target,k=f.dataset.f;if(!k)return;e.preventDefault();if(k==="recipe")return saveRecipe();const d=Object.fromEntries(new FormData(f));
 if(k==="job"){if(!S.crafts[d.c])return toast("Craft inconnu : choisis-en un dans la liste");
 run(async()=>{await addDoc(collection(db,"jobs"),{craft:d.c,qty:Math.max(1,parseInt(d.n)||1),deep:!!d.d,got:{},by:pseudo,at:Date.now()});sel="";render();toast("Craft ajouté ✅")})}
 if(k==="res")run(async()=>{await setDoc(doc(db,"res",slug(d.name.trim())),{name:d.name.trim(),price:num(d.price),stock:num(d.stock),cat:d.cat,where:d.where},{merge:true});f.reset();toast("Ressource enregistrée ✅")});
