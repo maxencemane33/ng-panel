@@ -26,14 +26,14 @@ Panel partagé en direct : calculateur de craft, crafts en cours avec suivi du f
 
 ## Utilisation
 - **Crafts** : tape un craft, la quantité, ajoute-le. Les ressources s'affichent avec le stock déjà disponible. Chaque membre note ce qu'il a farmé, la barre de progression est commune.
-- **Recettes** : crée, modifie ou supprime un craft (nom, quantité produite, ingrédients). Les ingrédients inconnus sont ajoutés automatiquement aux Ressources. Une recette qui s'utiliserait elle-même est refusée.
+- **Recettes** : crée, modifie ou supprime un craft (nom, quantité produite, ingrédients). Un ingrédient qui n'existe ni en craft ni en ressource est proposé à l'ajout dans Ressources. Une recette qui s'utiliserait elle-même est refusée.
 - **Ressources** : formulaire avec saisie assistée, prix et stock modifiables directement dans le tableau.
-- **Trades** : la rentabilité se calcule avec les prix des ressources.
-- **Schématics** : coordonnées copiables en un clic. Mets le lien du fichier (Drive, Dropbox, GitHub…).
+- **Trades** : la rentabilité se calcule avec les prix des ressources. Les deux ressources doivent exister dans Ressources, sinon le panel propose de les y ajouter.
+- **Schématics** : coordonnées copiables en un clic. Dépose directement le fichier (jusqu'à 6 Mo), il est stocké dans Firestore (gratuit, sans carte bancaire).
 
 ## Sécurité
 Le code est le mot de passe du compte Firebase partagé, vérifié côté serveur, et les règles refusent tout autre compte. Change-le dans Firebase (Authentication) si quelqu'un d'indésirable le connaît. Ne publie pas d'autres données sensibles dans ce panel.
 
 ## Limites actuelles
-- Pas d'import de fichiers de recettes ni d'envoi direct de fichiers schématics (liens uniquement).
+- Pas d'import de fichiers de recettes. Les schématics sont limités à 6 Mo par fichier.
 - Le tracteur est incomplet : 3 ingrédients illisibles dans le PDF d'origine.
