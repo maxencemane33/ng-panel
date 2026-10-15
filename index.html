@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NG Panel – Gestion du pays</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="login" class="login">
+  <form id="lf" class="panel">
+    <h1>⛏️ NG Panel</h1>
+    <p class="mut">Accès privé. Entre le code.</p>
+    <label>Code<input name="code" type="password" required autofocus autocomplete="current-password"></label>
+    <label>Pseudo <small class="mut">(facultatif, pour voir qui a farmé)</small><input name="pseudo" autocomplete="nickname"></label>
+    <button class="btn">Entrer</button>
+  </form>
+</div>
+<header>
+  <div class="logo">⛏️ NG Panel</div>
+  <nav id="nav"></nav>
+  <div class="user"><span id="who"></span> <button class="ghost" data-act="logout">Quitter</button></div>
+</header>
+<main id="main" class="wrap"></main>
+<datalist id="rl"></datalist>
+<div id="toast" class="toast"></div>
+<script type="module" src="app.js"></script>
+</body>
+</html>
