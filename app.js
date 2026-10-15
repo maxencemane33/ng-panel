@@ -143,7 +143,7 @@ if(k==="schem")addSchem(f)});
 
 // ---------- connexion + données en direct
 $("#lf").addEventListener("submit",async e=>{e.preventDefault();const d=Object.fromEntries(new FormData(e.target));pseudo=(d.pseudo||"").trim();localStorage.setItem("ng-pseudo",pseudo);
-try{await signInWithEmailAndPassword(auth,SHARED_EMAIL,d.code)}catch{toast("Code incorrect")}});
+try{await signInWithEmailAndPassword(auth,SHARED_EMAIL,d.code)}catch(err){toast(["auth/invalid-credential","auth/wrong-password","auth/user-not-found","auth/invalid-login-credentials"].includes(err.code)?"Code incorrect":"Erreur : "+(err.code||err.message))}});
 const watch=(c,fn)=>onSnapshot(collection(db,c),s=>{fn(s);refresh()},e=>toast("Synchronisation : "+(e.code||e.message)));
 onAuthStateChanged(auth,u=>{$("#login").hidden=!!u;if(!u||started)return;started=true;
 watch("crafts",s=>{S.crafts={};s.forEach(d=>{const v=d.data();S.crafts[v.name]={out:v.out||1,ing:(v.ing||[]).map(x=>[x.n,x.q]),id:d.id}})});
